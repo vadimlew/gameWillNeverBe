@@ -2,19 +2,19 @@ function SorterZManager() {
 	var objects= [];
 
 	this.add = function(obj) {
-		objects.push(obj);
+		objects.push(obj);		
 	}
 
 	this.update = function() {
 		for (var i=0; i < objects.length; i++) {
 			var obj1 = objects[i];			
-			var parent = obj1.sprite.parent;			
+			var parent = obj1.sprite.parent;						
 			if (!parent) continue;			
 			for (var j=i+1; j < objects.length; j++) {
-				var obj2 = objects[j];				
+				var obj2 = objects[j];					
 				if (!obj2.sprite.parent || parent != obj2.sprite.parent) continue;		
 				var index1 = parent.getChildIndex(obj1.sprite);
-				var index2 = parent.getChildIndex(obj2.sprite);
+				var index2 = parent.getChildIndex(obj2.sprite);				
 				if (obj1.sprite.y < obj2.sprite.y && index1 > index2) {
 					parent.swapChildren(obj1.sprite, obj2.sprite);
 				}
@@ -80,6 +80,24 @@ function BulletManager() {
 		if (aabb.y < y + aabb.ry) {flag = true};
 		if (aabb.y > y + h - aabb.ry) {flag = true};
 		return flag; 
+	}
+}
+
+function TimeManager(app) {
+	var functions = [];
+
+	this.add = function(func) {
+		functions.push(func);
+	}
+
+	this.start = function() {
+		app.ticker.add(update);
+	}
+
+	function update() {
+		for (var i=0; i < functions.length; i++) {
+			functions[i]();
+		}
 	}
 }
 

@@ -8,27 +8,26 @@ function Game() {
 	var input = new InputControl();
 	var sorterManager = new SorterZManager();
 	var bulletManager = new BulletManager();
+	var timeManager = new TimeManager(app);
 	var backLayer = new PIXI.Container();
 	var gameLayer = new PIXI.Container();
 
 	this.sorterManager = sorterManager;
 	this.bulletManager = bulletManager;	
+	this.timeManager = timeManager;	
 	var factory = new Factory(this);
 
 	app.stage.addChild(backLayer);	
-	app.stage.addChild(gameLayer);	
-		
-	function update(dt) {
-		phys.update();
-		sorterManager.update();
-		bulletManager.update();
-		playerControl();
-	}
+	app.stage.addChild(gameLayer);
 
 	function initGame() {
 		initPlayer();
-		createLevel();		
-		app.ticker.add(update);	
+		createLevel();
+		timeManager.add(phys.update);
+		timeManager.add(sorterManager.update);
+		timeManager.add(bulletManager.update);
+		timeManager.add(playerControl);
+		timeManager.start();
 	}
 
 	function initPlayer() {
@@ -39,44 +38,41 @@ function Game() {
 		self.player = player;
 	}
 
-	function createLevel() {	
-		factory.interior.floor(0,0,205,330,0x68914a,backLayer);
-		factory.interior.floor(205,0,195,330,0xb44346,backLayer);
+	function createLevel() {
+		factory.parent = backLayer;
+		factory.interior.floor(0,0,205,380,0x68914a);
+		factory.interior.floor(205,0,195,380,0xb44346);
+		factory.interior.floor(0,380,600,220,0x78a15a);
+		factory.interior.floor(400,0,200,380,0x68914a);
 
-		factory.interior.wall(0,0,400,0,gameLayer);
-		factory.interior.wall(0,10,0,300,gameLayer);
-		factory.interior.wall(390,10,0,300,gameLayer);
-		factory.interior.wall(200,10,0,100,gameLayer);
-		factory.interior.wall(200,170,0,130,gameLayer);
-		factory.interior.wall(0,300,275,0,gameLayer);
-		factory.interior.wall(325,300,75,0,gameLayer);
+		factory.interior.wall(10,0,'h',600);
+		factory.interior.wall(10,350,'h',270);
+		factory.interior.wall(330,350,'h',270);
+		factory.interior.wall(0,570,'h',600);
 
-		factory.enemy.crab(300,150,gameLayer);
+		factory.interior.wall(0,0,'v',580);
+		factory.interior.wall(200,10,'v',150);
+		factory.interior.wall(200,210,'v',150);
+		factory.interior.wall(400,10,'v',150);
+		factory.interior.wall(400,210,'v',150);
+		factory.interior.wall(600,0,'v',580);
+		
+		factory.parent = gameLayer;
+		factory.interior.table(43,40);
+		factory.interior.table(105,40);
+		factory.interior.table(167,40);
+		factory.interior.table(43,250);
+		factory.interior.table(167,250);
+		factory.interior.table(300,45,'1');
 
-		/*createFloor(0,0,205,330,0x68914a);
-		createFloor(205,0,195,330,0xb44346);
+		factory.interior.chair(45,58);
+		factory.interior.chair(107,60);
+		factory.interior.chair(170,58);
 
-		createWall(0,0,400,0);
-		createWall(0,10,0,300);
-		createWall(390,10,0,300);
-		createWall(200,10,0,100);
-		createWall(200,170,0,130);
-		createWall(0,300,275,0);
-		createWall(325,300,75,0);
+		factory.interior.couch(245,45);
+		factory.interior.couch(355,45);
 
-		createStuff(43,40,'assets/stuff/table2.png', {rx:30, ry:7.5, mass:8, friction:0.9});
-		createStuff(105,40,'assets/stuff/table2.png', {rx:30, ry:7.5, mass:8, friction:0.9});
-		createStuff(167,40,'assets/stuff/table2.png', {rx:30, ry:7.5, mass:8, friction:0.9});
-		createStuff(43,200,'assets/stuff/table2.png', {rx:30, ry:7.5, mass:8, friction:0.9});
-		createStuff(167,200,'assets/stuff/table2.png', {rx:30, ry:7.5, mass:8, friction:0.9});
-		createStuff(45,58,'assets/stuff/stool1.png',  {rx:7.5, ry:8, mass:2, friction:0.97, hit:{x:0,y:-6,rx:7.5,ry:12}});
-		createStuff(107,60,'assets/stuff/stool1.png', {rx:7.5, ry:8, mass:2, friction:0.97, hit:{x:0,y:-6,rx:7.5,ry:12}});
-		createStuff(170,58,'assets/stuff/stool1.png', {rx:7.5, ry:8, mass:2, friction:0.97, hit:{x:0,y:-6,rx:7.5,ry:12}});
-		createStuff(195+50,45,'assets/stuff/couch.png', {ay:0.65, rx:30, ry:10, mass:25, friction:0.8, hit:{x:0,y:-15,rx:25,ry:10}});
-		createStuff(195+160,45,'assets/stuff/couch.png', {ay:0.65, rx:30, ry:10, mass:25, friction:0.8, hit:{x:0,y:-15,rx:25,ry:10}});
-		createStuff(195+105,45,'assets/stuff/table3.png', {rx:15, ry:10, mass:4, friction:0.9});
-
-		createEnemyCrab(300,150);*/
+		//factory.enemy.crab(300,150);		
 	}
 
 	function playerControl() {
@@ -89,10 +85,17 @@ function Game() {
 		player.gun.reloadTime++;
 		player.sprite.scale.set(sx,1);
 
-		if (input.keys.left) player.body.x -= player.speed;
-		if (input.keys.up) player.body.y -= player.speed;
-		if (input.keys.right) player.body.x += player.speed;
-		if (input.keys.down) player.body.y += player.speed;
+		var nx = 0;
+		var ny = 0;
+
+		if (input.keys.left) nx = -1;
+		if (input.keys.up) ny = -1;
+		if (input.keys.right) nx = 1;
+		if (input.keys.down) ny = 1;
+
+		player.body.x += player.speed * nx / (ny != 0? 1.414 : 1);
+		player.body.y += player.speed * ny / (nx != 0? 1.414 : 1);
+
 		if (input.mouse.left) {
 			var bullet = player.fire(input.mouse);
 			if (bullet) {
@@ -114,29 +117,7 @@ function Game() {
 		} else {
 			player.animation.gotoAndStop(2);
 		}		
-	}
-
-	function createFloor(x,y,w,h,color) {
-		var floor = new Floor(x,y,w,h,color);
-		backLayer.addChild(floor.sprite);
-		return floor;
-	}
-
-	function createWall(x,y,w,h) {
-		var wall = new Wall(x,y,w,h);
-		gameLayer.addChild(wall.sprite);
-		sorterManager.add(wall);
-		bulletManager.add(wall);
-		return wall;		
-	}
-
-	function createStuff(x,y,image,props) {
-		var stuff = new Stuff(x,y,image,props);
-		gameLayer.addChild(stuff.sprite);
-		sorterManager.add(stuff);
-		if (stuff.hitArea) bulletManager.add(stuff);
-		return stuff;		
-	}
+	}	
 	
 	initGame();
 }

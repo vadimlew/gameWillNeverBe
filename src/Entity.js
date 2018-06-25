@@ -29,8 +29,8 @@ function createEntity(components) {
 	}
 
 	if (c.debug) {
-		if (c.debug.body) addDebugShape(entity.sprite, entity.body.aabb);
-		if (c.debug.hit) addDebugShape2(entity.sprite, entity.hitArea);
+		if (c.debug.body && entity.body) addDebugShape(entity.sprite, entity.body.aabb);
+		if (c.debug.hit && entity.hitArea) addDebugShape2(entity.sprite, entity.hitArea);
 	}
 	
 	return entity;

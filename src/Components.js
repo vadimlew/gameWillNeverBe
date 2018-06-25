@@ -1,6 +1,8 @@
 function DisplayComponent(props) {	
 	var x = props.x || 0;
 	var y = props.y || 0;
+	var ax = props.ax || 0;
+	var ay = props.ay || 0;
 	var image = props.image;
 
 	switch(typeof image) {
@@ -18,10 +20,11 @@ function DisplayComponent(props) {
 
 	this.sprite.x = x;
 	this.sprite.y = y;
+	if (this.sprite.anchor) this.sprite.anchor.set(ax,ay);
 	this.sprite.cacheAsBitmap = props.cacheAsBitmap || false;
 
 	if (props.parent) props.parent.addChild(this.sprite);
-	if (props.sorter) props.sorter.add(this);
+	if (props.manager) props.manager.add(this);
 } 
 
 function AnimationComponent(props) {
@@ -73,12 +76,14 @@ function BulletHitComponent(props) {
 	this.hit = function(bullet) {		
 		if (this.body && !this.body.isStatic) {
 			this.body.x += bullet.vx / this.body.mass;
-			this.body.y += bullet.vy / this.body.mass;			
-		}	
+			this.body.y += bullet.vy / this.body.mass;
+		}
 		if (this.dispatch) {			
 			this.dispatch('bulletHit', bullet);
-		}	
+		}
 	}
+
+	if (props.manager) props.manager.add(this);
 }
 
 function ShadeComponent(x,y,w,h) {
@@ -120,23 +125,28 @@ function EventComponent() {
 }
 
 function AIComponent(props) {
-	var target = props.target.sprite;
+	var target = props.target.sprite;	
 	var body = this.body;
-	var speed = .25;
+	var animation = this.animation;
+	var speed = .2;
+	var rad = 100;
+	var rad2 = rad * rad;
 
-	this.update = function() {
+	function update() {
 		var dx = target.x - body.x;
 		var dy = target.y - body.y;
 		var dd2 = dx*dx + dy*dy;
-		if (dd2 < 10000) {
+		if (dd2 < rad2) {
 			var dd = Math.sqrt(dd2);
 			var nx = dx/dd;
 			var ny = dy/dd;
 			body.x += nx * speed;
 			body.y += ny * speed;
-			this.animation.play();
+			animation.play();
 		} else {
-			this.animation.gotoAndStop(0);
+			animation.gotoAndStop(0);
 		}
 	}
+
+	if (props.manager) props.manager.add(update);
 }

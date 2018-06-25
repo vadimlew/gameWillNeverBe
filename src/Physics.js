@@ -189,21 +189,22 @@ function VerletPhysics() {
 		return flag; 
 	}
 
-	this.update = function() {
+	function update() {		
 		for (var i=0; i < bodies.length; i++) {
-			var body1 = bodies[i];	
+			var body1 = bodies[i];
 			//if (body1.isStatic) continue;
 			body1.iteration();
 			//console.log(body1.sprite.name);
 			//this.hitTestEdge(body1, 0,0,800,600);
 			for (var j=i+1; j < bodies.length; j++) {
 				var body2 = bodies[j];
-				this.hitTest(body1, body2);
+				hitTest(body1, body2);
 			}
 		}
 	}	
 
 	this.AABB = AABB;
 	this.Body = Body;
-	this.hitTest = hitTest;
+	this.hitTest = hitTest;	
+	this.update = update;
 }

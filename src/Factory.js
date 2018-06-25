@@ -1,8 +1,11 @@
 function Factory(game) {
-	this.enemy = {};
-	this.enemy.crab = function(x,y,parent) {		
+	var factory = this;
+	factory.parent = null;
+
+	factory.enemy = {};
+	factory.enemy.crab = function(x,y) {		
 		return createEntity({
-			display: {x:x, y:y, parent:parent, manager:game.sorterManager},			
+			display: {x:x, y:y, parent:factory.parent, manager:game.sorterManager},			
 			animation: {
 				list: [
 					{name:'walk', src:'assets/enemies/enemy_robot_crab_walk_', frames:6, speed:0.2, ox:22.5, oy:20, goto:0}
@@ -10,35 +13,42 @@ function Factory(game) {
 				autoplay: true
 			},
 			phys: {aabb:[x,y,10,5], friction:0.9, mass:5},
-			hit: {aabb: new phys.AABB(0,0,10,8)},
+			hit: {aabb: [0,0,10,8], manager:game.bulletManager},
 			events: true,
-			ai: {target: game.player},
+			ai: {target:game.player, manager:game.timeManager},
 			debug: {hitArea:false, body:false}
 		});		
 	}
 
-	this.interior = {};
-	this.interior.floor = function(x,y,w,h,color,parent) {
+	factory.interior = {};
+	factory.interior.floor = function(x,y,w,h,color) {
 		var shape = new PIXI.Graphics();	
 		shape.beginFill(color);
-		shape.drawRect(0, 0, w, h);
-
+		shape.drawRect(0, 0, w, h);		
 		return createEntity({
-			display: {x:x, y:y, image:shape, parent:parent, cacheAsBitmap:true}
+			display: {x:x, y:y, image:shape, parent:factory.parent, cacheAsBitmap:true}
 		})
 	}
 
-	this.interior.wall = function(x,y,w,h,parent) {
+	factory.interior.wall = function(x,y,direction,length) {
 		var color_top = 0x0f3044;
 		var color_side = 0xeed1a0;
-		var wall_height = 10;
-		var side_height = 20;
+		var wall_height = 20;
+		var wall_thick = 10;
+		var w = 0;
+		var h = 0;
 
-		if (w > h) h += wall_height;
-		if (w < h) w += wall_height;
+		if (direction == 'h') {
+			w = length;			
+		} else {			
+			h = length;			
+		}		
+
+		if (w > h) h += wall_thick;
+		if (w < h) w += wall_thick;
 
 		var w2 = w/2;
-		var h2 = h/2 + side_height/2;
+		var h2 = h/2 + wall_height/2;
 		var ax = x + w2;
 		var ay = y + h2;
 
@@ -46,90 +56,53 @@ function Factory(game) {
 		shape.beginFill(color_top);
 		shape.drawRect(0, 0, w, h);
 		shape.beginFill(color_side);
-		shape.drawRect(0, h, w, side_height);
+		shape.drawRect(0, h, w, wall_height);
 
 		return createEntity({
-			display: {x:x, y:y, image:shape, parent:parent, manager:game.sorterManager},
+			display: {x:x, y:y, image:shape, parent:factory.parent/*, manager:game.sorterManager*/},
 			phys: {aabb:[ax,ay,w2,h2], isStatic:true},
 			hit: {aabb:[w2,h2-5,w2,h2-5], manager:game.bulletManager},
 			debug: {hit:false, body:false}
 		});		
 	}
-}
 
+	factory.interior.table = function(x,y,type='0') {
+		switch(type) {
+			case '0': return createEntity({
+				display: {x:x, y:y, ax:0.5, ay:0.5, image:'assets/stuff/table2.png', parent:factory.parent, manager:game.sorterManager},
+				phys: {aabb:[x,y,30,7.5], mass:8, friction:0.9},			
+				debug: {hit:false, body:false}
+			});	
 
-
-
-
-
-/*function Floor(x,y,w,h,color) {	
-	var shape = new PIXI.Graphics();	
-	shape.beginFill(color);
-	shape.drawRect(0, 0, w, h);
-	DisplayComponent.call(this, {x:x, y:y, image:shape});
-	this.sprite.cacheAsBitmap = true;
-}*/
-
-function Wall(x,y,w,h) {
-	var color_top = 0x0f3044;
-	var color_side = 0xeed1a0;
-	var wall_height = 10;
-	var side_height = 20;
-
-	if (w > h) h += wall_height;
-	if (w < h) w += wall_height;
-
-	var shape = new PIXI.Graphics();
-	shape.beginFill(color_top);
-	shape.drawRect(0, 0, w, h);
-	shape.beginFill(color_side);
-	shape.drawRect(0, h, w, side_height);
-	DisplayComponent.call(this, {x:x, y:y, image:shape});
-	this.sprite.cacheAsBitmap = true;
-	//ShadeComponent.call(this, 0, h + side_height, w, 10);
-
-	var w2 = w/2;
-	var h2 = h/2 + side_height/2;
-	var ax = x + w2;
-	var ay = y + h2;
-	var aabb = new phys.AABB(ax, ay, w2, h2);
-	var hitArea = new phys.AABB(w2, h2-5, w2, h2-5);
-		
-	PhysicBodyComponent.call(this, {aabb:aabb, isStatic:true});
-	BulletHitComponent.call(this, hitArea);
-
-	//addDebugShape(this.sprite, aabb);
-	//addDebugShape2(this.sprite, hitArea);
-}
-
-function Stuff(x,y,image,props) {
-	var ax = props.ax || 0.5;
-	var ay = props.ay || 0.5;
-	var rx = props.rx || 0;
-	var ry = props.ry || 0;
-
-	EventComponent.call(this);
-	DisplayComponent.call(this, {x:x, y:y, image:image});
-	this.sprite.anchor.set(ax,ay);
-	
-	props.aabb = new phys.AABB(x, y, rx, ry);	
-	PhysicBodyComponent.call(this, props);
-	
-	if (props.hit) {
-		var hitArea = new phys.AABB(props.hit.x, props.hit.y, props.hit.rx, props.hit.ry);
-		BulletHitComponent.call(this, hitArea);
-
-		this.on('bulletHit', bulletHit.bind(this));
-		function bulletHit(bullet) {
-			var x = bullet.sprite.x - this.sprite.x;
-			var y = bullet.sprite.y - this.sprite.y;
-			//var particle = new Particles(x, y);
-			//this.sprite.addChild(particle.sprite);
-		}
-		//addDebugShape2(this.sprite, hitArea);
+			case '1': return createEntity({
+				display: {x:x, y:y, ax:0.5, ay:0.5, image:'assets/stuff/table3.png', parent:factory.parent, manager:game.sorterManager},
+				phys: {aabb:[x,y,15,10], mass:4, friction:0.9},			
+				debug: {hit:false, body:false}
+			});		
+		}		
 	}
 
-	//addDebugShape(this.sprite, aabb);	
+	factory.interior.chair = function(x,y,type='0') {
+		switch(type) {
+			case '0': return createEntity({
+				display: {x:x, y:y, ax:0.5, ay:0.5, image:'assets/stuff/stool1.png', parent:factory.parent, manager:game.sorterManager},
+				phys: {aabb:[x,y,7.5,8], mass:2, friction:0.97},	
+				hit: {aabb:[0,-6,7.5,12], manager:game.bulletManager},	
+				debug: {hit:false, body:false}
+			});			
+		}		
+	}
+
+	factory.interior.couch = function(x,y,type='0') {
+		switch(type) {
+			case '0': return createEntity({
+				display: {x:x, y:y, ax:0.5, ay:0.65, image:'assets/stuff/couch.png', parent:factory.parent, manager:game.sorterManager},
+				phys: {aabb:[x,y,30,10], mass:25, friction:0.8},	
+				hit: {aabb:[0,-15,25,10], manager:game.bulletManager},	
+				debug: {hit:false, body:false}
+			});			
+		}		
+	}
 }
 
 /*function Particles(x, y) {
