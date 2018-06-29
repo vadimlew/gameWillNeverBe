@@ -125,28 +125,17 @@ function EventComponent() {
 }
 
 function AIComponent(props) {
-	var target = props.target.sprite;	
-	var body = this.body;
-	var animation = this.animation;
-	var speed = .2;
-	var rad = 100;
-	var rad2 = rad * rad;
+	props.speed = .2;
+	props.owner = this;
+	props.sensorRadius = 100;	
+	
+	var waitState = new WaitState(props);
+	var followState = new FollowState(props);
+	var stateMachine = new StateMachine(waitState);
+	var sensor = new SensorCondition(props);
+	var sensor2 = new AntiCondition(sensor);
+	stateMachine.addCondition(sensor, followState);
+	//stateMachine.addCondition(sensor2, waitState);
 
-	function update() {
-		var dx = target.x - body.x;
-		var dy = target.y - body.y;
-		var dd2 = dx*dx + dy*dy;
-		if (dd2 < rad2) {
-			var dd = Math.sqrt(dd2);
-			var nx = dx/dd;
-			var ny = dy/dd;
-			body.x += nx * speed;
-			body.y += ny * speed;
-			animation.play();
-		} else {
-			animation.gotoAndStop(0);
-		}
-	}
-
-	if (props.manager) props.manager.add(update);
+	if (props.manager) props.manager.add(stateMachine.update);
 }

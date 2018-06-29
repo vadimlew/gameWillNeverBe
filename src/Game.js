@@ -72,7 +72,9 @@ function Game() {
 		factory.interior.couch(245,45);
 		factory.interior.couch(355,45);
 
-		//factory.enemy.crab(300,150);		
+		factory.interior.plant(355,145);
+
+		factory.enemy.crab(300,150);		
 	}
 
 	function playerControl() {

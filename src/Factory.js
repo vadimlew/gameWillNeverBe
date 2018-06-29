@@ -103,6 +103,17 @@ function Factory(game) {
 			});			
 		}		
 	}
+
+	factory.interior.plant = function(x,y,type='0') {
+		switch(type) {
+			case '0': return createEntity({
+				display: {x:x, y:y, ax:0.5, ay:0.85, image:'assets/stuff/cactus.png', parent:factory.parent, manager:game.sorterManager},
+				phys: {aabb:[x,y,8,6], mass:5, friction:0.8},	
+				/*hit: {aabb:[0,-15,25,10], manager:game.bulletManager},*/
+				debug: {hit:false, body:false}
+			});			
+		}		
+	}
 }
 
 /*function Particles(x, y) {
